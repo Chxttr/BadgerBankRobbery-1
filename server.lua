@@ -3,6 +3,85 @@
 -------------------------
 --- Server ---
 robberyActive = false
+-- Config
+prefix = '^5[^10-99^5] ^3';
+roleList = {
+    ['Police'] = 1, -- Change 1 with your Discord role ID
+}
+
+--- CODE ---
+function sendMsg(src, msg)
+    TriggerClientEvent('chat:addMessage', src, {
+        args = { prefix .. msg }
+    })
+end
+
+isCop = {}
+AddEventHandler('playerDropped', function (reason) 
+  -- Clear their lists 
+  local src = source;
+  isCop[src] = nil;
+end)
+
+RegisterNetEvent('BadgerBankRobbery:CheckPerms')
+AddEventHandler('BadgerBankRobbery:CheckPerms', function()
+    local src = source;
+    for k, v in ipairs(GetPlayerIdentifiers(src)) do
+        if string.sub(v, 1, string.len("discord:")) == "discord:" then
+            identifierDiscord = v
+        end
+    end
+    -- TriggerClientEvent("FaxDisVeh:CheckPermission:Return", src, true, false)
+    if identifierDiscord then
+        local roles = exports.discord_perms:GetRoles(src)
+        if not (roles == false) then
+            for i = 1, #roles do
+                for roleName, roleID in pairs(roleList) do
+                    if tonumber(roles[i]) == tonumber(roleID) then
+                        -- Return the index back to the Client script
+                        isCop[tonumber(src)] = true;
+                        print(GetPlayerName(src) .. " received BadgerBankRobbery permissions SUCCESS")
+                    end
+                end
+            end
+        else
+            print(GetPlayerName(src) .. " did not receive BadgerBankRobbery permissions because roles == false")
+        end
+    elseif identifierDiscord == nil then
+        print("identifierDiscord == nil")
+    end
+end)
+
+locationTracker = {}
+idCounter = 0;
+function mod(a, b)
+    return a - (math.floor(a/b)*b)
+end
+
+RegisterNetEvent('BadgerBankRobbery:bankrobberyalert')
+AddEventHandler('BadgerBankRobbery:bankrobberyalert', function()
+    local x, y, z = table.unpack(GetEntityCoords(GetPlayerPed(source)));
+    idCounter = idCounter + 1;
+    locationTracker[idCounter] = {x, y};
+    if mod(idCounter, 12) == 0 then 
+        -- Is a multiple of 12 with no remainder, we can remove 6 of the last 
+        local cout = idCounter - 12;
+        while cout < (idCounter - 6) do 
+            locationTracker[cout] = nil;
+            cout = cout + 1;
+        end
+        idCounter = 1;
+        locationTracker[idCounter] = {x, y};
+    end
+    for _, id in ipairs(GetPlayers()) do 
+        if isCop[tonumber(id)] ~= nil and isCop[tonumber(id)] == true then 
+            -- They are a cop, send them it 
+            sendMsg(id, "There is a robbery ongoing! Respond as fast as possible!");
+            TriggerClientEvent('BadgerBankRobbery:bankblipalert', source)
+        end
+    end
+end)
+
 RegisterNetEvent('BadgerBankRobbery:IsActive')
 AddEventHandler('BadgerBankRobbery:IsActive', function()
 	-- Check if active or not
