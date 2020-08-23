@@ -61,22 +61,9 @@ end
 RegisterNetEvent('BadgerBankRobbery:bankrobberyalert')
 AddEventHandler('BadgerBankRobbery:bankrobberyalert', function()
     local x, y, z = table.unpack(GetEntityCoords(GetPlayerPed(source)));
-    idCounter = idCounter + 1;
-    locationTracker[idCounter] = {x, y};
-    if mod(idCounter, 12) == 0 then 
-        -- Is a multiple of 12 with no remainder, we can remove 6 of the last 
-        local cout = idCounter - 12;
-        while cout < (idCounter - 6) do 
-            locationTracker[cout] = nil;
-            cout = cout + 1;
-        end
-        idCounter = 1;
-        locationTracker[idCounter] = {x, y};
-    end
     for _, id in ipairs(GetPlayers()) do 
         if isCop[tonumber(id)] ~= nil and isCop[tonumber(id)] == true then 
             -- They are a cop, send them it 
-            sendMsg(id, "There is a robbery ongoing! Respond as fast as possible!");
             TriggerClientEvent('BadgerBankRobbery:bankblipalert', source)
         end
     end
